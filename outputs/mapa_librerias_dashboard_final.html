@@ -37,6 +37,26 @@
         .popup-rating { display: inline-block; background: #f1c40f; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; margin-bottom: 8px; }
         .btn-link { display: block; text-align: center; background: #2ecc71; color: white; text-decoration: none; padding: 8px; border-radius: 4px; margin-top: 10px; }
         .btn-link:hover { background: #27ae60; }
+        .results-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            padding: 8px;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        .result-item {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .result-item:hover {
+            background: #e8f6ff;
+        }
     </style>
 </head>
 <body>
@@ -58,6 +78,11 @@
             <input type="range" id="ratingFilter" min="0" max="5" step="0.1" value="0" oninput="filterData()">
         </div>
         <div class="stats" id="statsCounter">Cargando datos...</div>
+        <!-- Resultados -->
+        <div class="filter-group">
+            <label>Resultados encontrados:</label>
+            <div id="resultsList" class="results-list"></div>
+        </div>
     </div>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
@@ -85,18 +110,43 @@
             const province = document.getElementById('provinceFilter').value;
             const minRating = parseFloat(document.getElementById('ratingFilter').value);
             document.getElementById('ratingVal').innerText = minRating;
+
             markersCluster.clearLayers();
             let count = 0;
+
+            const resultsContainer = document.getElementById('resultsList');
+            resultsContainer.innerHTML = ""; // limpiar lista
+
             rawData.forEach(item => {
                 const nombre = item.nombre ? item.nombre.toLowerCase() : "";
                 const kw = item.kw ? item.kw.toLowerCase() : "";
                 const matchText = (nombre.includes(text) || kw.includes(text));
                 const matchProv = (province === 'all' || item.provincia === province);
                 const matchRating = (item.rating >= minRating);
-                if (matchText && matchProv && matchRating) { createMarker(item); count++; }
+
+                if (matchText && matchProv && matchRating) {
+                    createMarker(item);
+                    function focusOnPlace(lat, lng) {
+                        map.flyTo([lat, lng], 18, { duration: 1.2 });
+                    }
+                    count++;
+
+                    // --- Añadir a la lista de resultados ---
+                    const el = document.createElement("div");
+                    el.classList.add("result-item");
+                    el.innerHTML = `
+                        <strong>${item.nombre}</strong><br>
+                        <span style="font-size:0.85rem;color:#555">${item.direccion}</span>
+                    `;
+                    el.onclick = () => focusOnPlace(item.lat, item.lng);
+                    resultsContainer.appendChild(el);
+                }
             });
-            document.getElementById('statsCounter').innerText = `Mostrando ${count} de ${rawData.length} resultados`;
+
+            document.getElementById('statsCounter').innerText =
+                `Mostrando ${count} de ${rawData.length} resultados`;
         }
+
 
         function createMarker(item) {
             let color = '#3498db';
