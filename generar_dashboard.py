@@ -66,6 +66,48 @@ HTML_TEMPLATE = """
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
     <style>
+        .detail-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 330px;
+            height: 100vh;
+            background: #ffffff;
+            border-left: 1px solid #ddd;
+            box-shadow: -3px 0 10px rgba(0,0,0,0.15);
+            padding: 20px;
+            z-index: 2000;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+            transform: translateX(100%);
+        }
+
+        .detail-panel.visible {
+            transform: translateX(0);
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .detail-body {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #444;
+        }
+
         body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
         #map { height: 100vh; width: 100%; z-index: 1; }
         .control-panel {
@@ -139,10 +181,55 @@ HTML_TEMPLATE = """
             <div id="resultsList" class="results-list"></div>
         </div>
     </div>
-    <div id="map"></div>
+    <div id="map">
+        <div id="detailPanel" class="detail-panel hidden">
+        <div class="detail-header">
+            <h3 id="detailName">Nombre</h3>
+            <button onclick="closeDetail()" class="close-btn">✖</button>
+        </div>
+        
+        <div class="detail-body">
+            <p><strong>Dirección:</strong><br><span id="detailAddress"></span></p>
+            <p><strong>Provincia:</strong><br><span id="detailProvince"></span></p>
+
+            <p><strong>Rating:</strong> <span id="detailRating"></span></p>
+
+            <p><strong>Palabras clave:</strong><br>
+                <span id="detailKeywords"></span>
+            </p>
+
+            <a id="detailWeb" href="#" target="_blank" class="btn-link" style="display:none">
+                Visitar Sitio Web
+            </a>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
     <script>
+        function openDetail(item) {
+            document.getElementById("detailName").innerText = item.nombre;
+            document.getElementById("detailAddress").innerText = item.direccion;
+            document.getElementById("detailProvince").innerText = item.provincia;
+            document.getElementById("detailRating").innerText = item.rating > 0 ? item.rating : "Sin calificación";
+            document.getElementById("detailKeywords").innerText = item.kw || "N/A";
+
+            // Web
+            const link = document.getElementById("detailWeb");
+            if (item.web && item.web.trim() !== "") {
+                link.style.display = "block";
+                link.href = item.web;
+            } else {
+                link.style.display = "none";
+            }
+
+            document.getElementById("detailPanel").classList.add("visible");
+        }
+
+        function closeDetail() {
+            document.getElementById("detailPanel").classList.remove("visible");
+        }
+
         // --- INYECCIÓN DE DATOS DESDE PYTHON ---
         const rawData = [DATA_PLACEHOLDER]; 
 
@@ -193,7 +280,10 @@ HTML_TEMPLATE = """
                         <strong>${item.nombre}</strong><br>
                         <span style="font-size:0.85rem;color:#555">${item.direccion}</span>
                     `;
-                    el.onclick = () => focusOnPlace(item.lat, item.lng);
+                    el.onclick = () => {
+                        focusOnPlace(item.lat, item.lng);
+                        openDetail(item);
+                    };
                     resultsContainer.appendChild(el);
                 }
             });
@@ -209,17 +299,12 @@ HTML_TEMPLATE = """
             else if(item.rating > 0 && item.rating < 3.5) color = '#e74c3c';
             
             var marker = L.circleMarker([item.lat, item.lng], {
-                radius: 8, fillColor: color, color: "#fff", weight: 2, opacity: 1, fillOpacity: 0.8
+                radius: 8, fillColor: color, color: "#fff",
+                weight: 2, opacity: 1, fillOpacity: 0.8
             });
-            const popupContent = `
-                <div class="popup-header">${item.nombre}</div>
-                <div class="popup-body">
-                    ${item.rating > 0 ? `<div class="popup-rating"><i class="fas fa-star"></i> ${item.rating}</div>` : ''}
-                    <p><i class="fas fa-map-marker-alt"></i> ${item.direccion}</p>
-                    <p><i class="fas fa-city"></i> ${item.provincia}</p>
-                    ${item.web ? `<a href="${item.web}" target="_blank" class="btn-link">Visitar Sitio Web</a>` : ''}
-                </div>`;
-            marker.bindPopup(popupContent, { className: 'custom-popup' });
+
+            marker.on("click", () => openDetail(item));
+
             markersCluster.addLayer(marker);
         }
 
