@@ -8,18 +8,18 @@ INPUT_FILE = os.path.join('cleaned', 'librerias_georef_all.csv')
 OUTPUT_FILE = os.path.join('outputs', 'mapa_librerias_dashboard_final.html')
 
 def cargar_y_procesar_datos():
-    print(f"📂 Leyendo archivo: {INPUT_FILE}...")
+    print(f"Leyendo archivo: {INPUT_FILE}...")
     
     try:
         df = pd.read_csv(INPUT_FILE)
     except FileNotFoundError:
-        print("❌ Error: No se encuentra el archivo CSV. Verifica la ruta.")
+        print("Error: No se encuentra el archivo CSV. Verifica la ruta.")
         return None
 
     # Lista para almacenar los objetos procesados
     data_list = []
 
-    print("⚙️  Procesando datos y limpiando valores nulos...")
+    print("Procesando datos y limpiando valores nulos...")
     
     for _, row in df.iterrows():
         # Limpieza de Rating: Si es NaN o vacío, poner 0
@@ -324,8 +324,7 @@ def generar_html():
         with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
             f.write(html_content)
         
-        print(f"✅ ¡Éxito! Archivo generado en: {OUTPUT_FILE}")
-        print("   Abre este archivo en tu navegador para ver el mapa con todos los datos.")
+        print(f"¡Éxito! Archivo generado en: {OUTPUT_FILE}")
 
 if __name__ == "__main__":
     generar_html()
