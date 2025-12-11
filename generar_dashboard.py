@@ -2,16 +2,14 @@ import pandas as pd
 import json
 import os
 
-# ================= CONFIGURACIÓN DE RUTAS =================
-# Basado en la estructura que me diste
-INPUT_FILE = os.path.join('cleaned', 'librerias_georef_all.csv')
-OUTPUT_FILE = os.path.join('outputs', 'mapa_librerias_dashboard_final.html')
+data_libs = os.path.join('cleaned', 'librerias_georef_all.csv')
+dashboard_final = os.path.join('outputs', 'mapa_librerias_dashboard_final.html')
 
 def cargar_y_procesar_datos():
-    print(f"Leyendo archivo: {INPUT_FILE}...")
+    print(f"Leyendo archivo: {data_libs}...")
     
     try:
-        df = pd.read_csv(INPUT_FILE)
+        df = pd.read_csv(data_libs)
     except FileNotFoundError:
         print("Error: No se encuentra el archivo CSV. Verifica la ruta.")
         return None
@@ -20,17 +18,16 @@ def cargar_y_procesar_datos():
     data_list = []
 
     print("Procesando datos y limpiando valores nulos...")
-    
     for _, row in df.iterrows():
-        # Limpieza de Rating: Si es NaN o vacío, poner 0
+        
         rating = 0.0
         try:
             val = row.get('rating', 0)
-            rating = float(val) if pd.notna(val) and val != '' else 0.0
+            rating = float(val) if pd.notna(val) and val != '' else 0.0 # Si es NaN o vacío, poner 0
         except:
             rating = 0.0
 
-        # Limpieza de Web: Si es NaN, dejar string vacío
+        # Si es NaN, dejar string vacío
         web = row.get('website', '')
         if pd.isna(web): web = ""
 
@@ -51,7 +48,6 @@ def cargar_y_procesar_datos():
     # Convertir a string JSON para inyectar en JS
     return json.dumps(data_list, ensure_ascii=False)
 
-# ================= PLANTILLA HTML =================
 # Esta es la interfaz moderna con filtros que diseñé para ti
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -292,7 +288,6 @@ HTML_TEMPLATE = """
                 `Mostrando ${count} de ${rawData.length} resultados`;
         }
 
-
         function createMarker(item) {
             let color = '#3498db';
             if(item.rating >= 4.5) color = '#2ecc71';
@@ -321,10 +316,10 @@ def generar_html():
         # Reemplazar el marcador DATA_PLACEHOLDER con los datos reales
         html_content = HTML_TEMPLATE.replace('[DATA_PLACEHOLDER]', json_data)
         
-        with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+        with open(dashboard_final, 'w', encoding='utf-8') as f:
             f.write(html_content)
         
-        print(f"¡Éxito! Archivo generado en: {OUTPUT_FILE}")
+        print(f"Archivo generado en: {dashboard_final}")
 
 if __name__ == "__main__":
     generar_html()
