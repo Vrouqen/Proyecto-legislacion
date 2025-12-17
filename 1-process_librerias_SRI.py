@@ -14,9 +14,9 @@ import folium
 from folium.plugins import MarkerCluster
 
 # --- Config ---
-RAW_DIR = "raw_data"
+RAW_DIR = "data/raw_data"
 SHP_PARROQUIAS = "datos_shp/nxparroquias.shp"
-CLEAN_DIR = "cleaned"
+CLEAN_DIR = "data/cleaned"
 OUT_DIR = "outputs"
 
 PROVINCIAS = ["MORONA SANTIAGO", "TUNGURAHUA"]   # provincias a considerar (textual)
@@ -120,11 +120,25 @@ def main():
 
     # 5) Guardar CSV limpio combinado y por provincia
     cols_out = [
-        "NUMERO_RUC","RAZON_SOCIAL","CODIGO_CIIU",
-        "DESCRIPCION_PROVINCIA_EST","DESCRIPCION_CANTON_EST","DESCRIPCION_PARROQUIA_EST",
-        "lat","lon"
+        "NUMERO_RUC",
+        "RAZON_SOCIAL",
+        "NOMBRE_FANTASIA_COMERCIAL",
+        "CODIGO_CIIU",
+        "DESCRIPCION_PROVINCIA_EST",
+        "DESCRIPCION_CANTON_EST",
+        "DESCRIPCION_PARROQUIA_EST",
+        "lat",
+        "lon"
     ]
+
     df_out = gdf[cols_out].copy()
+
+    # Renombrar NOMBRE_FANTASIA_COMERCIAL -> nombre
+    df_out.rename(
+        columns={"NOMBRE_FANTASIA_COMERCIAL": "nombre"},
+        inplace=True
+    )
+
     df_out.to_csv(OUT_CSV_ALL, index=False, encoding="utf-8")
     print("CSV combinado guardado en:", OUT_CSV_ALL)
 

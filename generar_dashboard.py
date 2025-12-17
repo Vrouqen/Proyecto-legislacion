@@ -2,7 +2,7 @@ import pandas as pd
 import json
 import os
 
-data_libs = os.path.join('cleaned', 'librerias_georef_all.csv')
+data_libs = os.path.join('data/scrapped', 'librerias_georef_all.csv')
 dashboard_final = os.path.join('outputs', 'mapa_librerias_dashboard_final.html')
 
 def cargar_y_procesar_datos():
