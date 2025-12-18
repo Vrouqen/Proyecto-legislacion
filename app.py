@@ -45,5 +45,25 @@ def librerias():
 
     return jsonify(data)
 
+@app.route("/api/ventas-canton")
+def ventas_por_canton():
+    df = pd.read_csv(
+        "data/cleaned/estimacion_ventas_librerias_por_canton.csv"
+    )
+
+    data = []
+    for _, r in df.iterrows():
+        data.append({
+            "provincia": r["provincia"],
+            "canton": r["canton"],
+            "codigo_canton": str(r["codigo_canton"]),
+            "numero_librerias": int(r["numero_librerias"]),
+            "ventas_totales": float(r["ventas_totales"]) if not pd.isna(r["ventas_totales"]) else 0,
+            "ventas_promedio": float(r["ventas_promedio"]) if not pd.isna(r["ventas_promedio"]) else 0,
+        })
+
+    return jsonify(data)
+
+
 if __name__ == "__main__":
     app.run(debug=True)

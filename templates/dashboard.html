@@ -119,6 +119,10 @@
             <input type="range" id="ratingFilter" min="0" max="5" step="0.1" value="0" oninput="filterData()">
         </div>
         <div class="stats" id="statsCounter">Cargando datos...</div>
+
+        <div class="stats" id="ventasStats">
+            Ventas INEC: cargando...
+        </div>
         <!-- Resultados -->
         <div class="filter-group">
             <label>Resultados encontrados:</label>
@@ -210,6 +214,8 @@
 
         let rawData = [];
 
+        let provinciasVisibles = new Set();
+
         fetch("/api/librerias")
             .then(res => res.json())
             .then(data => {
@@ -223,6 +229,54 @@
                     "Error cargando datos";
             });
 
+        let ventasCanton = [];
+
+        fetch("/api/ventas-canton")
+            .then(res => res.json())
+            .then(data => {
+                ventasCanton = data;
+                updateVentasStats();
+            });
+
+        function normalizarProvincia(p) {
+            if (!p) return "";
+            return p
+                .toString()
+                .trim()
+                .toUpperCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function updateVentasStats() {
+            if (provinciasVisibles.size === 0) {
+                document.getElementById("ventasStats").innerHTML =
+                    "Estimación INEC<br>Sin datos";
+                return;
+            }
+
+            const filtrado = ventasCanton.filter(v =>
+                provinciasVisibles.has(
+                    normalizarProvincia(v.provincia)
+                )
+            );
+
+            const totalVentas = filtrado.reduce(
+                (s, v) => s + v.ventas_totales, 0
+            );
+
+            const totalLocales = filtrado.reduce(
+                (s, v) => s + v.numero_librerias, 0
+            );
+
+            document.getElementById("ventasStats").innerHTML = `
+                <strong>Estimación INEC</strong><br>
+                Librerías (INEC): ${totalLocales}<br>
+                Ventas totales: $${totalVentas.toLocaleString()}
+            `;
+        }
+
+
 
         function initProvinceFilter() {
             const provinces = [...new Set(rawData.map(item => item.provincia))].sort();
@@ -234,6 +288,7 @@
         }
 
         function filterData() {
+            provinciasVisibles.clear();
             const text = document.getElementById('searchFilter').value.toLowerCase();
             const province = document.getElementById('provinceFilter').value;
             const minRating = parseFloat(document.getElementById('ratingFilter').value);
@@ -254,6 +309,9 @@
 
                 if (matchText && matchProv && matchRating) {
                     createMarker(item);
+                    provinciasVisibles.add(
+                        normalizarProvincia(item.provincia)
+                    );
                     function focusOnPlace(lat, lng) {
                         map.flyTo([lat, lng], 18, { duration: 1.2 });
                     }
@@ -276,6 +334,8 @@
 
             document.getElementById('statsCounter').innerText =
                 `Mostrando ${count} de ${rawData.length} resultados`;
+
+            updateVentasStats();
         }
 
         function createMarker(item) {
